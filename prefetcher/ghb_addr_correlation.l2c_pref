@@ -1,0 +1,82 @@
+#include "cache.h"
+#include <stdio.h>
+
+#define PREFETCH_DEGREE 5
+#define GHB_SIZE 256
+#define IT_SIZE 256
+
+typedef struct
+{
+    unsigned long long cl_addr; // 记录缓存行地址
+    unsigned int prev;          // 链表指
+} GHB_ENTRY;
+
+GHB_ENTRY ghb[GHB_SIZE] = {0};
+
+typedef struct
+{
+    unsigned int prev;
+} IT_ENTRY;
+
+IT_ENTRY it[IT_SIZE] = {0};
+
+// 新地址要插入位置下标
+unsigned int curr_idx = 0;
+
+void CACHE::l2c_prefetcher_initialize()
+{
+    printf("GHB G/AC prefetching\n");
+}
+
+float cache_access = 0;
+float cache_miss = 0;
+
+uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit, uint8_t type, uint32_t metadata_in)
+{
+    cache_access = cache_access + 1;
+    if (!cache_hit)
+    {
+        cache_miss = cache_miss + 1;
+    }
+    // 缓存行地址
+    uint64_t cl_addr = addr >> LOG2_BLOCK_SIZE;
+    if (ghb[it[cl_addr % IT_SIZE].prev].cl_addr == cl_addr)
+    {
+        ghb[curr_idx].prev = it[cl_addr % IT_SIZE].prev;
+    }
+    else
+    {
+        cout << 1;
+        ghb[curr_idx].prev = curr_idx;
+    }
+    ghb[curr_idx].cl_addr = cl_addr;
+    it[cl_addr % IT_SIZE].prev = curr_idx;
+
+    uint64_t prefetch_addr;
+    int cnt = 0;
+    unsigned int elem_idx = ghb[curr_idx].prev;
+
+    while (cnt < PREFETCH_DEGREE && ghb[elem_idx].prev != elem_idx && ghb[elem_idx].cl_addr == cl_addr)
+    {
+        prefetch_addr = ghb[(elem_idx + 1) % GHB_SIZE].cl_addr << LOG2_BLOCK_SIZE;
+        if (MSHR.occupancy < (MSHR.SIZE >> 1))
+            prefetch_line(ip, addr, prefetch_addr, FILL_L2, 0);
+        else
+            prefetch_line(ip, addr, prefetch_addr, FILL_LLC, 0);
+        cnt++;
+        elem_idx = ghb[elem_idx].prev;
+    }
+
+    curr_idx = (curr_idx + 1) % GHB_SIZE;
+    return metadata_in;
+}
+
+uint32_t CACHE::l2c_prefetcher_cache_fill(uint64_t addr, uint32_t set, uint32_t way, uint8_t prefetch, uint64_t evicted_addr, uint32_t metadata_in)
+{
+    return metadata_in;
+}
+
+void CACHE::l2c_prefetcher_final_stats()
+{
+    printf("GHB G/AC prefetching over\n");
+}
