@@ -55,4 +55,4 @@ for i in range(log_num):
                 print("%s score: %f"  %(traces[int(filename.strip()[-1:])], float(line[t+5:t+12])))
 
 print("avg score: %.6f" %(res/log_num))
-os.system("rm -rf tmplog*")
+# os.system("rm -rf tmplog*")
