@@ -1,7 +1,7 @@
 #include "cache.h"
 #include <stdio.h>
 
-#define PREFETCH_DEGREE 10
+#define PREFETCH_DEGREE 12
 #define LOOK_HEAD 1
 #define GHB_SIZE 256
 #define IT_SIZE 256
@@ -90,10 +90,10 @@ uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache
                 for (int i = LOOK_HEAD; i <= LOOK_HEAD + PREFETCH_DEGREE; i++)
                 {
                     prefetch_addr = (cl_addr + i * stride1) << LOG2_BLOCK_SIZE;
-                    if (MSHR.occupancy < (MSHR.SIZE >> 1))
-                        prefetch_line(ip, addr, prefetch_addr, FILL_L2, 0);
-                    else
-                        prefetch_line(ip, addr, prefetch_addr, FILL_LLC, 0);
+                    // if (MSHR.occupancy < (MSHR.SIZE >> 1))
+                    prefetch_line(ip, addr, prefetch_addr, FILL_L2, 0);
+                    // else
+                    // prefetch_line(ip, addr, prefetch_addr, FILL_LLC, 0);
                 }
             }
             state = OVER;

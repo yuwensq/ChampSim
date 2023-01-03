@@ -20,8 +20,8 @@ uint32_t CACHE::llc_find_victim(uint32_t cpu, uint64_t instr_id, uint32_t set, c
 {
     // baseline LRU
     int index = 0;
-    int min_freq = 0xf3f3f3f;
-    for (int i = 0; i < LLC_WAY; i++)
+    int min_freq = freq[set][0];
+    for (int i = 1; i < LLC_WAY; i++)
     {
         if (freq[set][i] < min_freq)
         {
@@ -65,7 +65,7 @@ void CACHE::llc_update_replacement_state(uint32_t cpu, uint32_t set, uint32_t wa
     }
     else
     {
-        freq[set][way] = 0;
+        freq[set][way] = 1;
     }
 }
 
