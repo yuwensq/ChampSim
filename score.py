@@ -5,8 +5,8 @@ import sys
 args = argparse.ArgumentParser(description = 'Score simulator.')
 args.add_argument("bin_path", type = str, help = "bin_path")
 args.add_argument("traces_dir_path", type = str, help = "traces_dir_path")
-args.add_argument("file1", type = int, help = "file1")
-args.add_argument("file2", type = int, help = "file2")
+# args.add_argument("file1", type = int, help = "file1")
+# args.add_argument("file2", type = int, help = "file2")
 args = args.parse_args() 
 
 # check
@@ -26,8 +26,10 @@ for path,d,filelist in os.walk(args.traces_dir_path):
             
 bin_path = args.bin_path
 trace_file_path = args.traces_dir_path
-file1 = args.file1
-file2 = args.file2
+# file1 = args.file1
+# file2 = args.file2
+file1 = 0
+file2 = 1
 print("bin_path: ",bin_path)
 print("trace_file_path: ",trace_file_path)
 
@@ -50,7 +52,7 @@ for trace in traces:
 
 res = 0
 for i in range(log_num):
-    filename = student_num+"_"+str(i)
+    filename = student_num+"_"+str(files[i])
     with open(filename, 'r') as f:
         lines = f.readlines()
         for line in lines:

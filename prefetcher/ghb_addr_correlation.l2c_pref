@@ -2,8 +2,8 @@
 #include <stdio.h>
 
 #define PREFETCH_DEGREE 5
-#define GHB_SIZE 256
-#define IT_SIZE 256
+#define GHB_SIZE 2048
+#define IT_SIZE 2048
 
 typedef struct
 {
@@ -42,11 +42,11 @@ uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache
     uint64_t cl_addr = addr >> LOG2_BLOCK_SIZE;
     if (ghb[it[cl_addr % IT_SIZE].prev].cl_addr == cl_addr)
     {
+        cout << 1;
         ghb[curr_idx].prev = it[cl_addr % IT_SIZE].prev;
     }
     else
     {
-        cout << 1;
         ghb[curr_idx].prev = curr_idx;
     }
     ghb[curr_idx].cl_addr = cl_addr;
