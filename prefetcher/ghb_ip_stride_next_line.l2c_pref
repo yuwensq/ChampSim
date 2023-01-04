@@ -68,6 +68,7 @@ uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache
     unsigned int elem_idx = curr_idx;
     stride1 = ghb[curr_idx].cl_addr;
     STATE state = STRIDE1;
+    int ghb_pref = 0;
 
     while (ghb[elem_idx].prev != elem_idx && ghb[elem_idx].pc == ip && state != OVER)
     {
@@ -87,13 +88,11 @@ uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache
         case COND:
             if (stride1 == stride2)
             {
+                ghb_pref = 1;
                 for (int i = LOOK_HEAD; i <= LOOK_HEAD + PREFETCH_DEGREE; i++)
                 {
                     prefetch_addr = (cl_addr + i * stride1) << LOG2_BLOCK_SIZE;
-                    // if (MSHR.occupancy < (MSHR.SIZE >> 1))
                     prefetch_line(ip, addr, prefetch_addr, FILL_L2, 0);
-                    // else
-                    // prefetch_line(ip, addr, prefetch_addr, FILL_LLC, 0);
                 }
             }
             state = OVER;
@@ -103,27 +102,11 @@ uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache
             break;
         }
     }
-    // if (ghb[curr_idx].prev == curr_idx) {
-    //     goto end;
-    // }
-    // addr1 = ghb[ghb[curr_idx].prev].addr;
-    // if (ghb[ghb[curr_idx].prev].prev == ghb[curr_idx].prev || ghb[ghb[ghb[curr_idx].prev].prev].pc != ip) {
-    //     goto end;
-    // }
-    // addr2 = ghb[ghb[ghb[curr_idx].prev].prev].addr;
-
-    // s1 = addr - addr1;
-    // s2 = addr1 - addr2;
-    // if (s1 == s2) {
-    //     for (int i = PRO_HEAD; i <= PRO_HEAD + PREFETCH_DEGREE + 1; i++) {
-    //         prefetch_addr = addr + i * s1;
-    //         if (MSHR.occupancy < (MSHR.SIZE>>1))
-    //             prefetch_line(ip, addr, prefetch_addr, FILL_L2, 0);
-    //         else
-    //             prefetch_line(ip, addr, prefetch_addr, FILL_LLC, 0);
-    //     }
-    // }
-
+    if (!ghb_pref)
+    {
+        prefetch_addr = (cl_addr + 1) << LOG2_BLOCK_SIZE;
+        prefetch_line(ip, addr, prefetch_addr, FILL_L2, 0);
+    }
     curr_idx = (curr_idx + 1) % GHB_SIZE;
     return metadata_in;
 }

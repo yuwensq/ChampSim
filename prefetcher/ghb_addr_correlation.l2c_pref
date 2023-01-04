@@ -2,8 +2,8 @@
 #include <stdio.h>
 
 #define PREFETCH_DEGREE 5
-#define GHB_SIZE 2048
-#define IT_SIZE 2048
+#define GHB_SIZE 4096
+#define IT_SIZE 4096
 
 typedef struct
 {
