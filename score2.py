@@ -57,7 +57,7 @@ for i in range(log_num):
             if line[0:8] == "Finished":
                 t = line.find("IPC")
                 res += float(line[t+5:t+12])
-                print("%s score: %f"  %(traces[int(filename.strip()[-1:])], float(line[t+5:t+12])))
+                print("%s score: %f"  %(traces[i], float(line[t+5:t+12])))
 
 print("avg score: %.6f" %(res/log_num))
 # os.system("rm -rf tmplog*")

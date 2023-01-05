@@ -1,5 +1,7 @@
 #include "cache.h"
+#include <iostream>
 #include <stdio.h>
+#include <vector>
 
 #define PREFETCH_DEGREE 10
 #define LOOK_HEAD 1
@@ -31,6 +33,7 @@ typedef enum
     STRIDE1,
     STRIDE2,
     COND,
+    FINDS1,
     OVER
 } STATE;
 
@@ -44,6 +47,7 @@ float cache_miss = 0;
 
 uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit, uint8_t type, uint32_t metadata_in)
 {
+    // std::cout << "in" << std::endl;
     cache_access = cache_access + 1;
     if (!cache_hit)
     {
@@ -73,10 +77,11 @@ uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache
 
     uint64_t prefetch_addr;
     long long int stride1 = 0, stride2 = 0;
+    long long int delta = 0;
     unsigned int elem_idx = curr_idx;
     stride1 = ghb[curr_idx].cl_addr;
     STATE state = STRIDE1;
-    int ghb_pref = 0;
+    std::vector<long long int> dels;
 
     while (ghb[elem_idx].prev != elem_idx && ghb[elem_idx].pc == ip && state != OVER)
     {
@@ -86,36 +91,61 @@ uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache
         case STRIDE1:
             stride2 = ghb[prev_idx].cl_addr;
             stride1 = stride1 - stride2;
+            dels.insert(dels.begin(), stride1);
             state = STRIDE2;
             elem_idx = prev_idx;
             break;
         case STRIDE2:
-            stride2 = stride2 - ghb[prev_idx].cl_addr;
+            delta = ghb[prev_idx].cl_addr;
+            stride2 = stride2 - delta;
+            dels.insert(dels.begin(), stride2);
             state = COND;
+            elem_idx = prev_idx;
             break;
         case COND:
             if (stride1 == stride2)
             {
-                ghb_pref = 1;
                 for (int i = LOOK_HEAD; i <= LOOK_HEAD + PREFETCH_DEGREE; i++)
                 {
                     prefetch_addr = (cl_addr + i * stride1) << LOG2_BLOCK_SIZE;
-                    prefetch_line(ip, addr, prefetch_addr, FILL_L2, 0);
+                    if (MSHR.occupancy < (MSHR.SIZE >> 1))
+                        prefetch_line(ip, addr, prefetch_addr, FILL_L2, 0);
+                    else
+                        prefetch_line(ip, addr, prefetch_addr, FILL_LLC, 0);
                 }
+                state = OVER;
             }
-            state = OVER;
+            else
+            {
+                state = FINDS1;
+            }
+            break;
+        case FINDS1:
+            delta = delta - ghb[prev_idx].cl_addr;
+            if (delta == STRIDE1)
+            {
+                for (int i = 0; i < PREFETCH_DEGREE && i < dels.size(); i++)
+                {
+                    prefetch_addr = (cl_addr + dels[i]) << LOG2_BLOCK_SIZE;
+                    if (MSHR.occupancy < (MSHR.SIZE >> 1))
+                        prefetch_line(ip, addr, prefetch_addr, FILL_L2, 0);
+                    else
+                        prefetch_line(ip, addr, prefetch_addr, FILL_LLC, 0);
+                }
+                state = OVER;
+            }
+            dels.insert(dels.begin(), delta);
+            delta = ghb[prev_idx].cl_addr;
+            elem_idx = prev_idx;
             break;
         default:
             state = OVER;
             break;
         }
     }
-    if (!ghb_pref)
-    {
-        prefetch_addr = (cl_addr + 1) << LOG2_BLOCK_SIZE;
-        prefetch_line(ip, addr, prefetch_addr, FILL_L2, 0);
-    }
+
     curr_idx = (curr_idx + 1) % GHB_SIZE;
+    // std::cout << "out" << std::endl;
     return metadata_in;
 }
 

@@ -42,7 +42,6 @@ uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache
     uint64_t cl_addr = addr >> LOG2_BLOCK_SIZE;
     if (ghb[it[cl_addr % IT_SIZE].prev].cl_addr == cl_addr)
     {
-        cout << 1;
         ghb[curr_idx].prev = it[cl_addr % IT_SIZE].prev;
     }
     else
@@ -51,6 +50,14 @@ uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache
     }
     ghb[curr_idx].cl_addr = cl_addr;
     it[cl_addr % IT_SIZE].prev = curr_idx;
+
+    for (int i = 0; i < GHB_SIZE; i++)
+    {
+        if (ghb[i].prev == curr_idx)
+        {
+            ghb[i].prev = i;
+        }
+    }
 
     uint64_t prefetch_addr;
     int cnt = 0;

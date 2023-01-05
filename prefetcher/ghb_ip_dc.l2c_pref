@@ -57,6 +57,14 @@ uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache
     ghb[curr_idx].pc = ip;
     it[ip % IT_SIZE].prev = curr_idx;
 
+    for (int i = 0; i < GHB_SIZE; i++)
+    {
+        if (ghb[i].prev == curr_idx)
+        {
+            ghb[i].prev = i;
+        }
+    }
+
     uint64_t prefetch_addr;
     long long int stride1 = 0, stride2 = 0, stride = 0;
     unsigned int elem_idx = curr_idx;
