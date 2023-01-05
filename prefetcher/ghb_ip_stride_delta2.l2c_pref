@@ -124,7 +124,7 @@ uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache
             break;
         case FINDS1:
             delta = delta - ghb[prev_idx].cl_addr;
-            if (delta == STRIDE1)
+            if (delta == stride1)
             {
                 need_next = 0;
                 for (int i = 0; i < PREFETCH_DEGREE && i < dels.size(); i++)
