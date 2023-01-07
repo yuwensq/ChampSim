@@ -24,7 +24,7 @@ NORMAL=$(tput sgr0)
 BRANCH=perceptron
 L1D_PREFETCHER=no
 LLC_PREFETCHER=no
-LLC_REPLACEMENT=lfu_wnd
+LLC_REPLACEMENT=lfu
 NUM_CORE=1
 #################################################
 

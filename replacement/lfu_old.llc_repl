@@ -63,10 +63,6 @@ void CACHE::llc_update_replacement_state(uint32_t cpu, uint32_t set, uint32_t wa
     {
         freq[set][way] += 1;
     }
-    else if (type == PREFETCH)
-    {
-        freq[set][way] = 0;
-    }
     else
     {
         freq[set][way] = 1;

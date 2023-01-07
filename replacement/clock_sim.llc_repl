@@ -61,8 +61,10 @@ void CACHE::llc_update_replacement_state(uint32_t cpu, uint32_t set, uint32_t wa
     // uncomment this line to see the LLC accesses
     // cout << "CPU: " << cpu << "  LLC " << setw(9) << TYPE_NAME << " set: " << setw(5) << set << " way: " << setw(2) << way;
     // cout << hex << " paddr: " << setw(12) << paddr << " ip: " << setw(8) << ip << " victim_addr: " << victim_addr << dec << endl;
-
-    freq[set][way] = 1;
+    if (type == PREFETCH)
+        freq[set][way] = 0;
+    else
+        freq[set][way] = 1;
 }
 
 void CACHE::llc_replacement_final_stats()

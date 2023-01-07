@@ -1,10 +1,7 @@
 #include "cache.h"
-#include <iostream>
 #include <stdio.h>
-#include <vector>
 
 #define PREFETCH_DEGREE 10
-#define PREFETCH_DEGREE2 10
 #define LOOK_HEAD 1
 #define GHB_SIZE 256
 #define IT_SIZE 256
@@ -34,18 +31,24 @@ typedef enum
     STRIDE1,
     STRIDE2,
     COND,
-    FINDS1,
-    FINDS2,
     OVER
 } STATE;
 
 void CACHE::l2c_prefetcher_initialize()
 {
-    printf("GHB ip stride_ip delta_next line prefetching\n");
+    printf("GHB PC/CS prefetching\n");
 }
+
+float cache_access = 0;
+float cache_miss = 0;
 
 uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit, uint8_t type, uint32_t metadata_in)
 {
+    cache_access = cache_access + 1;
+    if (!cache_hit)
+    {
+        cache_miss = cache_miss + 1;
+    }
     // 缓存行地址
     uint64_t cl_addr = addr >> LOG2_BLOCK_SIZE;
     if (ghb[it[ip % IT_SIZE].prev].pc == ip)
@@ -70,12 +73,9 @@ uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache
 
     uint64_t prefetch_addr;
     long long int stride1 = 0, stride2 = 0;
-    long long int delta = 0;
     unsigned int elem_idx = curr_idx;
     stride1 = ghb[curr_idx].cl_addr;
     STATE state = STRIDE1;
-    std::vector<long long int> dels;
-    int need_next = 1;
 
     while (ghb[elem_idx].prev != elem_idx && ghb[elem_idx].pc == ip && state != OVER)
     {
@@ -85,74 +85,52 @@ uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache
         case STRIDE1:
             stride2 = ghb[prev_idx].cl_addr;
             stride1 = stride1 - stride2;
-            dels.insert(dels.begin(), stride1);
             state = STRIDE2;
             elem_idx = prev_idx;
             break;
         case STRIDE2:
-            delta = ghb[prev_idx].cl_addr;
-            stride2 = stride2 - delta;
-            dels.insert(dels.begin(), stride2);
+            stride2 = stride2 - ghb[prev_idx].cl_addr;
             state = COND;
-            elem_idx = prev_idx;
             break;
         case COND:
             if (stride1 == stride2)
             {
-                need_next = 0;
                 for (int i = LOOK_HEAD; i <= LOOK_HEAD + PREFETCH_DEGREE; i++)
                 {
                     prefetch_addr = (cl_addr + i * stride1) << LOG2_BLOCK_SIZE;
+                    // if (MSHR.occupancy < (MSHR.SIZE >> 1))
                     prefetch_line(ip, addr, prefetch_addr, FILL_L2, 0);
+                    // else
+                    // prefetch_line(ip, addr, prefetch_addr, FILL_LLC, 0);
                 }
-                state = OVER;
             }
-            else
-            {
-                state = FINDS1;
-            }
-            break;
-        case FINDS1:
-            delta = delta - ghb[prev_idx].cl_addr;
-            dels.insert(dels.begin(), delta);
-            if (delta == stride1)
-            {
-                state = FINDS2;
-            }
-            delta = ghb[prev_idx].cl_addr;
-            elem_idx = prev_idx;
-            break;
-        case FINDS2:
-            delta = delta - ghb[prev_idx].cl_addr;
-            dels.insert(dels.begin(), delta);
-            if (delta == stride2)
-            {
-                need_next = 0;
-                for (int i = 2; i - 2 < PREFETCH_DEGREE2 && i < dels.size(); i++)
-                {
-                    prefetch_addr = (cl_addr + dels[i]) << LOG2_BLOCK_SIZE;
-                    prefetch_line(ip, addr, prefetch_addr, FILL_L2, 0);
-                }
-                state = OVER;
-            }
-            else
-            {
-                state = FINDS1;
-            }
-            delta = ghb[prev_idx].cl_addr;
-            elem_idx = prev_idx;
+            state = OVER;
             break;
         default:
             state = OVER;
             break;
         }
     }
+    // if (ghb[curr_idx].prev == curr_idx) {
+    //     goto end;
+    // }
+    // addr1 = ghb[ghb[curr_idx].prev].addr;
+    // if (ghb[ghb[curr_idx].prev].prev == ghb[curr_idx].prev || ghb[ghb[ghb[curr_idx].prev].prev].pc != ip) {
+    //     goto end;
+    // }
+    // addr2 = ghb[ghb[ghb[curr_idx].prev].prev].addr;
 
-    if (need_next)
-    {
-        prefetch_addr = (cl_addr + 1) << LOG2_BLOCK_SIZE;
-        prefetch_line(ip, addr, prefetch_addr, FILL_L2, 0);
-    }
+    // s1 = addr - addr1;
+    // s2 = addr1 - addr2;
+    // if (s1 == s2) {
+    //     for (int i = PRO_HEAD; i <= PRO_HEAD + PREFETCH_DEGREE + 1; i++) {
+    //         prefetch_addr = addr + i * s1;
+    //         if (MSHR.occupancy < (MSHR.SIZE>>1))
+    //             prefetch_line(ip, addr, prefetch_addr, FILL_L2, 0);
+    //         else
+    //             prefetch_line(ip, addr, prefetch_addr, FILL_LLC, 0);
+    //     }
+    // }
 
     curr_idx = (curr_idx + 1) % GHB_SIZE;
     return metadata_in;
@@ -165,5 +143,5 @@ uint32_t CACHE::l2c_prefetcher_cache_fill(uint64_t addr, uint32_t set, uint32_t 
 
 void CACHE::l2c_prefetcher_final_stats()
 {
-    printf("GHB ip_stride ip_delta next_line over\n");
+    printf("GHB PC/CS prefetching over\n");
 }

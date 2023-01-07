@@ -41,7 +41,7 @@ typedef enum
 
 void CACHE::l2c_prefetcher_initialize()
 {
-    printf("GHB ip stride_ip delta_next line prefetching\n");
+    printf("GSDN prefetching\n");
 }
 
 uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit, uint8_t type, uint32_t metadata_in)
@@ -165,5 +165,5 @@ uint32_t CACHE::l2c_prefetcher_cache_fill(uint64_t addr, uint32_t set, uint32_t 
 
 void CACHE::l2c_prefetcher_final_stats()
 {
-    printf("GHB ip_stride ip_delta next_line over\n");
+    printf("GSDN over\n");
 }

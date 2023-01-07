@@ -2,7 +2,7 @@
 #include <assert.h>
 #include <vector>
 
-#define WND_SIZE 25
+#define WND_SIZE 75
 
 std::vector<vector<int>> wnds;
 
@@ -35,28 +35,6 @@ uint32_t CACHE::llc_find_victim(uint32_t cpu, uint64_t instr_id, uint32_t set, c
             index = i;
         }
     }
-    // std::vector<int>::iterator it = wnds[set].begin();
-    // while (it != wnds[set].end())
-    // {
-    //     if (*it != index)
-    //     {
-    //         it++;
-    //     }
-    //     else
-    //     {
-    //         wnds[set].erase(it);
-    //     }
-    // }
-    // int has_index = 0;
-    // for (int i = 0; i < wnds[set].size(); i++)
-    // {
-    //     if (wnds[set][i] == index)
-    //     {
-    //         has_index = 1;
-    //         break;
-    //     }
-    // }
-    // assert(!has_index);
     return index;
 }
 
